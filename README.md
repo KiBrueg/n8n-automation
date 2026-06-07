@@ -2,7 +2,7 @@
 
 Запускаемое модульное ядро AI-автоматизации: **один engine, к которому режимы (support / sales / docs / friend / stream) прилепляются как дополнения — без переписывания кода.** Каркас стоит на жёстких контрактах данных и переключаемых LLM-провайдерах.
 
-> Полное описание архитектуры и план развития — в [`AI-Automation-Hub-Blueprint.md`](./AI-Automation-Hub-Blueprint.md). Визуальная карта — `portfolio-roadmap-canvas.html`.
+> Полное описание архитектуры и план развития — в [`AI-Automation-Hub-Blueprint.md`](./AI-Automation-Hub-Blueprint.md).
 
 ## Что это показывает работодателю
 

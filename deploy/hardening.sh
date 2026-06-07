@@ -43,6 +43,10 @@ if ! id "$USERNAME" &>/dev/null; then
 	adduser --disabled-password --gecos "" "$USERNAME"
 fi
 usermod -aG sudo "$USERNAME"
+# пользователь создан без пароля (вход только по ключу) → даём passwordless sudo,
+# иначе sudo недоступен (нечем подтвердить). Для деплой-сервера это норма.
+echo "$USERNAME ALL=(ALL) NOPASSWD:ALL" > "/etc/sudoers.d/90-$USERNAME"
+chmod 440 "/etc/sudoers.d/90-$USERNAME"
 install -d -m 700 -o "$USERNAME" -g "$USERNAME" "/home/$USERNAME/.ssh"
 echo "$SSH_PUBKEY" > "/home/$USERNAME/.ssh/authorized_keys"
 chmod 600 "/home/$USERNAME/.ssh/authorized_keys"
