@@ -32,6 +32,7 @@ services:
   caddy:
     image: caddy:2-alpine
     <<: *default-restart
+    init: true   # tini как PID 1 — реапит зомби от healthcheck (wget каждые 30с)
     ports:
       - "80:80"
       - "443:443"
@@ -71,6 +72,7 @@ services:
     image: ${GATEWAY_IMAGE:-ghcr.io/kibrueg/n8n-automation-gateway:latest}
     build: ./gateway
     <<: *default-restart
+    init: true   # tini как PID 1 — реапит зомби от healthcheck (python каждые 15с)
     env_file: .env
     environment:
       - MODES_DIR=/app/modes
