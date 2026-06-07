@@ -1,0 +1,20 @@
+[
+  {
+    "channel": "webform",
+    "mode_hint": "support_triage",
+    "user": { "user_id": "demo-user", "locale": "ru" },
+    "message": { "type": "text", "text": "Здравствуйте, не приходит письмо для подтверждения регистрации" }
+  },
+  {
+    "channel": "telegram",
+    "mode_hint": "support_triage",
+    "user": { "user_id": "lead-42" },
+    "message": { "type": "text", "text": "Сколько стоит тариф Pro и есть ли trial?" }
+  },
+  {
+    "channel": "email",
+    "mode_hint": "support_triage",
+    "user": { "user_id": "angry-client" },
+    "message": { "type": "text", "text": "Это ужас, ничего не работает, верните деньги и дайте оператора" }
+  }
+]

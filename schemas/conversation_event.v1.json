@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "conversation_event.v1",
+  "title": "ConversationEvent",
+  "description": "Нормализованное входящее событие из любого канала.",
+  "type": "object",
+  "required": ["channel", "user", "message"],
+  "properties": {
+    "schema_version": { "const": "conversation_event.v1" },
+    "event_id": { "type": "string" },
+    "received_at": { "type": "string", "format": "date-time" },
+    "channel": {
+      "type": "string",
+      "enum": ["telegram", "email", "twitch", "youtube", "voip", "webform"]
+    },
+    "mode_hint": { "type": ["string", "null"] },
+    "user": {
+      "type": "object",
+      "required": ["user_id"],
+      "properties": {
+        "user_id": { "type": "string" },
+        "display_name": { "type": ["string", "null"] },
+        "locale": { "type": ["string", "null"] }
+      }
+    },
+    "message": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": { "type": "string", "enum": ["text", "voice", "file", "event"] },
+        "text": { "type": ["string", "null"] },
+        "attachments": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["url"],
+            "properties": {
+              "kind": { "type": "string", "enum": ["pdf", "image", "audio", "other"] },
+              "url": { "type": "string" },
+              "mime": { "type": ["string", "null"] }
+            }
+          }
+        }
+      }
+    },
+    "metadata": { "type": "object" }
+  }
+}

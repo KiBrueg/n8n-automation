@@ -1,0 +1,13 @@
+{
+  "mode": "SUPPORT_TRIAGE",
+  "tone": "профессиональный, спокойный, без воды",
+  "prompt_file": "support_triage.md",
+  "allowed_actions": ["create_ticket", "send_email", "set_reminder", "none"],
+  "trust_level": "draft",
+  "escalate_when": [
+    "жалоба или негатив",
+    "запрос на человека/оператора",
+    "юридический или финансовый вопрос",
+    "низкая уверенность классификации"
+  ]
+}

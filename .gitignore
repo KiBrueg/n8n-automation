@@ -1,0 +1,25 @@
+# --- секреты ---
+.env
+*.env.local
+
+# --- python ---
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+
+# --- данные/тома ---
+n8n_data/
+pg_data/
+
+# --- бэкапы и логи (не коммитим) ---
+backups/
+*.sql
+*.sql.gz
+*.log
+
+# --- личное, не часть продукта (держим локально, не в публичном репо) ---
+scripts/scan-disk.ps1
+Career-Architecture-Document*.md
+Career-Architecture-Document*.pdf
+portfolio-roadmap-canvas.html

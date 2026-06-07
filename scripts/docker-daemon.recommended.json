@@ -1,0 +1,18 @@
+{
+  "_comment": "Рекомендованный daemon.json для Docker Desktop (WSL2). Применить: Docker Desktop -> Settings -> Docker Engine -> вставить эти ключи -> Apply & Restart. Это ПРЕВЕНТИВНАЯ защита от разрастания диска.",
+
+  "_log_comment": "Глобальная ротация логов всех контейнеров (иначе логи копятся бесконечно).",
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  },
+
+  "_builder_comment": "Авто-сборка мусора build cache: держим не больше 20GB. Главный пожиратель места — именно кэш сборки. Если на D: мало места, уменьши defaultKeepStorage (напр. 10GB).",
+  "builder": {
+    "gc": {
+      "enabled": true,
+      "defaultKeepStorage": "20GB"
+    }
+  }
+}

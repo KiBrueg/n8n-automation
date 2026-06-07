@@ -1,0 +1,134 @@
+{
+  "name": "AI Automation Hub — Core",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "hub",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "trigger-webhook",
+      "name": "1 · Trigger (Webhook)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [240, 300],
+      "webhookId": "hub-core"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 2 · Normalize → ConversationEvent\n// Привести вход любого канала к единому контракту. Здесь — generic webhook.\nconst body = $input.first().json.body || $input.first().json;\nconst event = {\n  schema_version: 'conversation_event.v1',\n  channel: body.channel || 'webform',\n  mode_hint: body.mode || null,\n  user: {\n    user_id: String(body.user_id || body.from || 'anonymous'),\n    display_name: body.display_name || null,\n    locale: body.locale || null,\n  },\n  message: {\n    type: body.type || 'text',\n    text: body.text || body.message || null,\n    attachments: body.attachments || [],\n  },\n  metadata: body.metadata || {},\n};\nreturn [{ json: event }];"
+      },
+      "id": "normalize",
+      "name": "2 · Normalize",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.GATEWAY_URL }}/v1/process",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-API-Key", "value": "={{ $env.GATEWAY_API_KEY }}" }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json) }}",
+        "options": { "timeout": 65000 }
+      },
+      "id": "core-decide",
+      "name": "3-4 · Enrich + LLM Decision (Gateway)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300],
+      "onError": "continueErrorOutput"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": { "caseSensitive": true },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.decision.escalate }}",
+                    "rightValue": true,
+                    "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "outputKey": "escalate"
+            }
+          ]
+        },
+        "options": { "fallbackOutput": "extra" }
+      },
+      "id": "route-escalate",
+      "name": "5 · Switch (escalate?)",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [920, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($json) }}",
+        "options": {}
+      },
+      "id": "respond",
+      "name": "6 · Respond to Channel",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1160, 220]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ status: 'escalated', event_id: $json.event_id, summary: $json.decision.log.summary }) }}",
+        "options": {}
+      },
+      "id": "escalate-human",
+      "name": "5b · Escalate → Human",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [1160, 380]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseCode": 502,
+        "responseBody": "={{ JSON.stringify({ status: 'error', error: 'core_unavailable' }) }}",
+        "options": {}
+      },
+      "id": "on-error",
+      "name": "Error → alert (TODO: Telegram)",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [920, 460]
+    }
+  ],
+  "connections": {
+    "1 · Trigger (Webhook)": { "main": [[{ "node": "2 · Normalize", "type": "main", "index": 0 }]] },
+    "2 · Normalize": { "main": [[{ "node": "3-4 · Enrich + LLM Decision (Gateway)", "type": "main", "index": 0 }]] },
+    "3-4 · Enrich + LLM Decision (Gateway)": {
+      "main": [
+        [{ "node": "5 · Switch (escalate?)", "type": "main", "index": 0 }],
+        [{ "node": "Error → alert (TODO: Telegram)", "type": "main", "index": 0 }]
+      ]
+    },
+    "5 · Switch (escalate?)": {
+      "main": [
+        [{ "node": "5b · Escalate → Human", "type": "main", "index": 0 }],
+        [{ "node": "6 · Respond to Channel", "type": "main", "index": 0 }]
+      ]
+    }
+  },
+  "settings": { "executionOrder": "v1" },
+  "meta": { "description": "Базовый скелет ядра без режимов. Режим добавляется через mode_hint и промпт в gateway." }
+}

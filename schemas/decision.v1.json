@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "decision.v1",
+  "title": "Decision",
+  "description": "Строгий выход LLM. Невалидный объект → ядро делает retry.",
+  "type": "object",
+  "required": ["reply_text", "escalate", "actions"],
+  "properties": {
+    "schema_version": { "const": "decision.v1" },
+    "reply_text": { "type": ["string", "null"] },
+    "escalate": { "type": "boolean" },
+    "confidence": { "type": "number", "minimum": 0, "maximum": 1 },
+    "actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type"],
+        "properties": {
+          "type": {
+            "type": "string",
+            "enum": [
+              "create_ticket", "update_lead_stage", "save_record", "send_email",
+              "upsert_note", "create_clip", "set_reminder", "none"
+            ]
+          },
+          "params": { "type": "object" },
+          "idempotency_key": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "log": {
+      "type": "object",
+      "properties": {
+        "intent": { "type": ["string", "null"] },
+        "summary": { "type": ["string", "null"] }
+      }
+    }
+  }
+}

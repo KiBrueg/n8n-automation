@@ -1,0 +1,8 @@
+{
+  "mode": "ASSISTANT",
+  "tone": "деловой, по делу",
+  "prompt_file": "assistant.md",
+  "allowed_actions": ["set_reminder", "save_record", "upsert_note", "none"],
+  "trust_level": "draft",
+  "escalate_when": ["явный запрос на человека"]
+}

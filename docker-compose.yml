@@ -1,0 +1,104 @@
+# AI Automation Hub — core stack
+# Запуск: cp .env.example .env && docker compose up -d --build
+# Слои: gateway (FastAPI) · n8n (оркестрация) · postgres (память/логи) · caddy (reverse-proxy + HTTPS)
+services:
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - gateway
+      - n8n
+    networks: [hub]
+
+  gateway:
+    build: ./gateway
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - MODES_DIR=/app/modes
+      - PROMPTS_DIR=/app/prompts
+    # для локального demo порт опубликован на хост; в проде убрать и ходить через caddy
+    ports:
+      - "8000:8000"
+    expose:
+      - "8000"
+    volumes:
+      # режимы и промпты монтируем — можно править без пересборки образа
+      - ./modes:/app/modes:ro
+      - ./prompts:/app/prompts:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [hub]
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0) if urllib.request.urlopen('http://localhost:8000/health').status==200 else sys.exit(1)"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+  n8n:
+    image: n8nio/n8n:latest
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      - DB_TYPE=postgresdb
+      - DB_POSTGRESDB_HOST=postgres
+      - DB_POSTGRESDB_PORT=5432
+      - DB_POSTGRESDB_DATABASE=${POSTGRES_DB}
+      - DB_POSTGRESDB_USER=${POSTGRES_USER}
+      - DB_POSTGRESDB_PASSWORD=${POSTGRES_PASSWORD}
+      - N8N_HOST=${N8N_HOST}
+      - N8N_PROTOCOL=https
+      - WEBHOOK_URL=https://${N8N_HOST}/
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+      - GENERIC_TIMEZONE=${TZ:-Europe/Berlin}
+      # GATEWAY_URL доступен из workflow для вызова FastAPI по внутренней сети
+      - GATEWAY_URL=http://gateway:8000
+    expose:
+      - "5678"
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [hub]
+
+  postgres:
+    image: postgres:16
+    platform: linux/amd64
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+      - ./gateway/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    expose:
+      - "5432"
+    networks: [hub]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  pg_data:
+  n8n_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  hub:
+    driver: bridge

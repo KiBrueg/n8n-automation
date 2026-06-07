@@ -1,0 +1,54 @@
+# ============================================================
+# Caddy — reverse-proxy + автоматический HTTPS (Let's Encrypt)
+# ------------------------------------------------------------
+# Хосты берутся из .env. Caddy сам выпускает и продлевает сертификаты.
+#
+# DEV (локально):  N8N_HOST=localhost → self-signed, это норма.
+# PROD (VPS):      задай поддомены, напр. через sslip.io:
+#     N8N_HOST=n8n.<IP>.sslip.io
+#     GATEWAY_HOST=api.<IP>.sslip.io
+#     STATUS_HOST=status.<IP>.sslip.io
+#     ACME_EMAIL=you@example.com
+#   или свой домен: n8n.example.com / api.example.com / status.example.com
+#
+# Переезд на свой домен = поменять эти переменные в .env + DNS A-записи на IP.
+# ============================================================
+
+{
+	# email для Let's Encrypt (в проде из env; в dev — заглушка, ACME не вызывается для localhost)
+	email {$ACME_EMAIL:admin@example.com}
+	# на время теста можно включить staging LE, чтобы не упереться в rate limit:
+	# acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
+}
+
+# --- n8n UI / вебхуки ---
+{$N8N_HOST:localhost} {
+	encode zstd gzip
+	reverse_proxy n8n:5678
+	log {
+		output stdout
+		format console
+	}
+}
+
+# --- Gateway API (FastAPI) ---
+# dev-дефолт с портом 8443, чтобы не конфликтовать с n8n на localhost; в проде = api.<host>
+{$GATEWAY_HOST:localhost:8443} {
+	encode zstd gzip
+	reverse_proxy gateway:8000
+	log {
+		output stdout
+		format console
+	}
+}
+
+# --- Uptime Kuma (мониторинг) ---
+# dev-дефолт localhost:8444 (в dev сервиса kuma нет — маршрут просто не используется); в проде = status.<host>
+{$STATUS_HOST:localhost:8444} {
+	encode zstd gzip
+	reverse_proxy uptime-kuma:3001
+	log {
+		output stdout
+		format console
+	}
+}
