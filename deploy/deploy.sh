@@ -23,8 +23,9 @@ if [[ ! -f .env ]]; then
 	exit 1
 fi
 
-echo "==> 1/5 git pull"
-git pull --ff-only
+echo "==> 1/5 sync code (hard reset to origin/main)"
+git fetch origin
+git reset --hard origin/main
 
 echo "==> 2/5 docker compose pull"
 $COMPOSE pull
