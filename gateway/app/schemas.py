@@ -7,22 +7,22 @@ Decision         — строгий выход LLM (reply_text + actions[] + esc
 """
 from __future__ import annotations
 
-from datetime import datetime, timezone
-from enum import Enum
-from typing import Any, Literal, Optional
+from datetime import UTC, datetime
+from enum import StrEnum
+from typing import Any, Literal
 from uuid import uuid4
 
 from pydantic import BaseModel, Field
 
 
 def _now() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 # --------------------------------------------------------------------------- #
 #  Вход: ConversationEvent
 # --------------------------------------------------------------------------- #
-class Channel(str, Enum):
+class Channel(StrEnum):
     telegram = "telegram"
     email = "email"
     twitch = "twitch"
@@ -31,7 +31,7 @@ class Channel(str, Enum):
     webform = "webform"
 
 
-class MessageType(str, Enum):
+class MessageType(StrEnum):
     text = "text"
     voice = "voice"
     file = "file"
@@ -41,18 +41,18 @@ class MessageType(str, Enum):
 class Attachment(BaseModel):
     kind: Literal["pdf", "image", "audio", "other"] = "other"
     url: str
-    mime: Optional[str] = None
+    mime: str | None = None
 
 
 class EventUser(BaseModel):
     user_id: str
-    display_name: Optional[str] = None
-    locale: Optional[str] = None
+    display_name: str | None = None
+    locale: str | None = None
 
 
 class EventMessage(BaseModel):
     type: MessageType = MessageType.text
-    text: Optional[str] = None
+    text: str | None = None
     attachments: list[Attachment] = Field(default_factory=list)
 
 
@@ -63,7 +63,7 @@ class ConversationEvent(BaseModel):
     event_id: str = Field(default_factory=lambda: str(uuid4()))
     received_at: datetime = Field(default_factory=_now)
     channel: Channel
-    mode_hint: Optional[str] = None  # подсказка режима (по endpoint/каналу), может быть None
+    mode_hint: str | None = None  # подсказка режима (по endpoint/каналу), может быть None
     user: EventUser
     message: EventMessage
     metadata: dict[str, Any] = Field(default_factory=dict)
@@ -72,7 +72,7 @@ class ConversationEvent(BaseModel):
 # --------------------------------------------------------------------------- #
 #  Выход: Decision
 # --------------------------------------------------------------------------- #
-class ActionType(str, Enum):
+class ActionType(StrEnum):
     create_ticket = "create_ticket"
     update_lead_stage = "update_lead_stage"
     save_record = "save_record"
@@ -87,19 +87,19 @@ class Action(BaseModel):
     type: ActionType
     params: dict[str, Any] = Field(default_factory=dict)
     # ядро проставляет ключ идемпотентности, если LLM не дал — защита от дублей
-    idempotency_key: Optional[str] = None
+    idempotency_key: str | None = None
 
 
 class DecisionLog(BaseModel):
-    intent: Optional[str] = None
-    summary: Optional[str] = None
+    intent: str | None = None
+    summary: str | None = None
 
 
 class Decision(BaseModel):
     """v1 — то, что обязан вернуть LLM (валидируется; невалидное → retry)."""
 
     schema_version: Literal["decision.v1"] = "decision.v1"
-    reply_text: Optional[str] = None
+    reply_text: str | None = None
     escalate: bool = False
     confidence: float = Field(0.0, ge=0.0, le=1.0)
     actions: list[Action] = Field(default_factory=list)

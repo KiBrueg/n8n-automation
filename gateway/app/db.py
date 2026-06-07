@@ -7,7 +7,6 @@ from __future__ import annotations
 
 import json
 import logging
-from typing import Optional
 
 import asyncpg
 
@@ -16,7 +15,7 @@ from .schemas import ConversationEvent, ProcessResponse
 
 log = logging.getLogger("hub.db")
 
-_pool: Optional[asyncpg.Pool] = None
+_pool: asyncpg.Pool | None = None
 
 
 async def init_pool(settings: Settings) -> None:
@@ -34,12 +33,12 @@ async def close_pool() -> None:
         await _pool.close()
 
 
-def get_pool() -> Optional[asyncpg.Pool]:
+def get_pool() -> asyncpg.Pool | None:
     """Доступ к пулу для других модулей (actions). None — БД недоступна."""
     return _pool
 
 
-async def log_interaction(event: ConversationEvent, resp: Optional[ProcessResponse], error: Optional[str] = None) -> None:
+async def log_interaction(event: ConversationEvent, resp: ProcessResponse | None, error: str | None = None) -> None:
     record = {
         "event_id": event.event_id,
         "channel": event.channel.value,

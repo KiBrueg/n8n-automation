@@ -38,7 +38,7 @@ def sanitize(text: str | None) -> SanitizeResult:
     out = text
 
     for label, pattern in _PATTERNS:
-        def _repl(m: re.Match[str]) -> str:
+        def _repl(m: re.Match[str], label: str = label) -> str:
             original = m.group(0)
             counters[label] = counters.get(label, 0) + 1
             placeholder = f"[{label}_{counters[label]}]"

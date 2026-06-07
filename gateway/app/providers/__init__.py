@@ -3,7 +3,7 @@
 Ядро вызывает get_chat_provider()/get_transcriber() и не знает деталей.
 Добавить нового провайдера = добавить класс + ветку в фабрике, роуты не трогаем.
 """
-from .base import ChatProvider, Transcriber, ProviderError
+from .base import ChatProvider, ProviderError, Transcriber
 from .factory import get_chat_provider, get_transcriber
 
 __all__ = [
