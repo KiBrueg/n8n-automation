@@ -102,7 +102,9 @@ services:
           memory: 256M
 
   n8n:
-    image: n8nio/n8n:1
+    # ВАЖНО: версия зафиксирована. НЕ менять на latest/stable.
+    # Перед обновлением — запустить scripts/update-n8n.sh
+    image: n8nio/n8n:2.23.4
     <<: *default-restart
     env_file: .env
     environment:
@@ -121,8 +123,14 @@ services:
       - N8N_BASIC_AUTH_USER=${N8N_BASIC_AUTH_USER}
       - N8N_BASIC_AUTH_PASSWORD=${N8N_BASIC_AUTH_PASSWORD}
       - GENERIC_TIMEZONE=${TZ:-Europe/Berlin}
+      - NODE_ENV=production
       - N8N_DIAGNOSTICS_ENABLED=false
       - N8N_HIRING_BANNER_ENABLED=false
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
+      - N8N_LOG_LEVEL=info
+      - N8N_LOG_OUTPUT=file
+      - N8N_LOG_FILE_LOCATION=/home/node/.n8n/logs/
       - GATEWAY_URL=http://gateway:8000
     expose:
       - "5678"

@@ -6,6 +6,7 @@ services:
   caddy:
     image: caddy:2-alpine
     restart: unless-stopped
+    env_file: .env
     ports:
       - "80:80"
       - "443:443"
@@ -46,7 +47,8 @@ services:
       start_period: 20s
 
   n8n:
-    image: n8nio/n8n:latest
+    # ВАЖНО: версия зафиксирована. НЕ менять на latest.
+    image: n8nio/n8n:2.23.4
     restart: unless-stopped
     env_file: .env
     environment:
@@ -61,6 +63,10 @@ services:
       - WEBHOOK_URL=https://${N8N_HOST}/
       - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
       - GENERIC_TIMEZONE=${TZ:-Europe/Berlin}
+      - NODE_ENV=production
+      - EXECUTIONS_DATA_PRUNE=true
+      - EXECUTIONS_DATA_PRUNE_MAX_COUNT=10000
+      - N8N_LOG_LEVEL=info
       # GATEWAY_URL доступен из workflow для вызова FastAPI по внутренней сети
       - GATEWAY_URL=http://gateway:8000
     expose:
