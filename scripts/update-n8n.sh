@@ -29,6 +29,18 @@ cp .env "$BACKUP_DIR/.env.bak"
 cp "$COMPOSE_FILE" "$BACKUP_DIR/docker-compose.prod.yml.bak"
 docker exec n8n-automation-postgres-1 pg_dump -U hub jobradar \
   | gzip > "$BACKUP_DIR/jobradar_db.sql.gz"
+
+# Экспорт всех workflow в JSON (независимо от DB)
+N8N_CONTAINER=$(docker compose -f "$COMPOSE_FILE" ps -q n8n 2>/dev/null)
+if [ -n "$N8N_CONTAINER" ]; then
+  docker exec "$N8N_CONTAINER" n8n export:workflows \
+    --output=/tmp/pre-update-workflows.json 2>/dev/null
+  docker cp "$N8N_CONTAINER":/tmp/pre-update-workflows.json \
+    "$BACKUP_DIR/workflows-pre-update.json" 2>/dev/null \
+    && echo "    Workflow JSON: OK" \
+    || echo "    Workflow JSON: не удалось (не критично)"
+fi
+
 echo "    Бэкап: OK ($(du -sh "$BACKUP_DIR" | cut -f1))"
 
 # --- Шаг 2: Текущая версия ---
